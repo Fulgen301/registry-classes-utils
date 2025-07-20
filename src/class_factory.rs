@@ -62,13 +62,14 @@ impl IClassFactory_Impl for ClassFactory_Impl {
 
 #[macro_export]
 macro_rules! dll_get_class_object_impl {
-    (clsid = $clsid:ident, iid = $iid:ident, ppv = $ppv:ident, classes = [ $($class:ident),* ] ) => {{
+    (clsid = $clsid:ident, iid = $iid:ident, ppv = $ppv:ident, classes = [ $($class:ident),+ ] ) => {{
         fn __dll_get_class_object_impl(
             clsid: *const GUID,
             iid: *const GUID,
             ppv: *mut *mut c_void,
         ) -> HRESULT {
             use windows::core::{ComObject, Interface, IUnknown};
+            use windows::Win32::Foundation::{CLASS_E_CLASSNOTAVAILABLE, E_POINTER};
             use $crate::class_factory::ClassFactory;
             use $crate::com::{CoClass, CreatableCoClass};
 
@@ -93,7 +94,7 @@ macro_rules! dll_get_class_object_impl {
                     ComObject::new($class::new()?)
                     .as_interface::<IUnknown>()
                     .query(iid, ppv).ok()
-                })),*,
+                }),)+
                 _ => return CLASS_E_CLASSNOTAVAILABLE,
             };
 
